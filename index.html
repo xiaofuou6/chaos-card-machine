@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>混乱计划抽卡机</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4F46E5">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎴</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #faf7f0 0%, #f5f1e8 100%); min-height: 100vh; padding-bottom: 100px; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5rem; font-weight: 300; color: #2c2c2c; margin-bottom: 8px; letter-spacing: 2px; }
+        .header .subtitle { font-size: 1rem; color: #8b7355; font-weight: 400; letter-spacing: 1px; margin-bottom: 4px; }
+        .header .english { font-size: 0.9rem; color: #a0956b; font-style: italic; font-weight: 300; }
+        
+        /* Tab导航 */
+        .tabs { display: flex; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(139, 115, 85, 0.1); justify-content: space-between; align-items: center; padding: 12px; border: 1px solid rgba(139, 115, 85, 0.1); }
+        .tab-group { display: flex; gap: 6px; }
+        .tab { padding: 12px 20px; text-align: center; cursor: pointer; border-radius: 12px; transition: all 0.3s; font-size: 14px; font-weight: 500; }
+        .tab.active { background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: white; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4); }
+        .tab:hover:not(.active) { background: rgba(255, 107, 107, 0.1); }
+        .action-buttons { display: flex; gap: 10px; }
+        .btn-action { padding: 12px 18px; border: none; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.3s; }
+        .btn-add { background: linear-gradient(135deg, #00d2ff, #3a7bd5); color: white; box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3); }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 210, 255, 0.4); }
+        .btn-draw { background: linear-gradient(135deg, #ffecd2, #fcb69f); color: #333; box-shadow: 0 4px 15px rgba(252, 182, 159, 0.3); }
+        .btn-draw:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(252, 182, 159, 0.4); }
+        
+        /* 任务列表 */
+        .task-list { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border-radius: 16px; box-shadow: 0 4px 20px rgba(139, 115, 85, 0.1); border: 1px solid rgba(139, 115, 85, 0.1); }
+        .task-item { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.3); display: flex; align-items: center; gap: 15px; transition: all 0.3s; }
+        .task-item:last-child { border-bottom: none; }
+        .task-item:hover { background: rgba(255, 107, 107, 0.05); }
+        .task-checkbox { width: 22px; height: 22px; border: 2px solid #ff6b6b; border-radius: 6px; cursor: pointer; transition: all 0.3s; }
+        .task-checkbox.completed { background: linear-gradient(135deg, #ff6b6b, #ee5a24); border-color: #ff6b6b; }
+        .task-content { flex: 1; }
+        .task-name { font-weight: 500; margin-bottom: 4px; }
+        .task-meta { font-size: 12px; color: #6B7280; display: flex; gap: 8px; flex-wrap: wrap; }
+        .task-actions { display: flex; gap: 8px; }
+        .btn-icon { width: 32px; height: 32px; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-edit { background: #F3F4F6; color: #6B7280; }
+        .btn-delete { background: #FEE2E2; color: #DC2626; }
+        
+        /* 时间按钮 */
+        .time-buttons { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+        .time-btn { padding: 10px 18px; border: 2px solid rgba(255, 107, 107, 0.3); background: rgba(255, 255, 255, 0.8); border-radius: 12px; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+        .time-btn.active { border-color: #ff6b6b; background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: white; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3); }
+        .time-btn:hover:not(.active) { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.1); }
+        
+        /* 筛选组 */
+        .filter-group { margin-bottom: 20px; }
+        .filter-title { font-weight: 600; margin-bottom: 10px; color: #333; }
+        .filter-options { display: flex; gap: 8px; flex-wrap: wrap; }
+        .filter-option { padding: 8px 16px; border: 2px solid rgba(255, 107, 107, 0.3); background: rgba(255, 255, 255, 0.8); border-radius: 10px; cursor: pointer; transition: all 0.3s; font-size: 14px; font-weight: 500; }
+        .filter-option.active { border-color: #ff6b6b; background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: white; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3); }
+        .filter-option:hover:not(.active) { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.1); }
+        
+        /* 弹窗 */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(139, 115, 85, 0.3); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-open { overflow: hidden; }
+        .modal-content { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); border-radius: 20px; padding: 25px; max-width: 480px; width: 90%; max-height: 85vh; overflow-y: auto; border: 1px solid rgba(139, 115, 85, 0.2); box-shadow: 0 10px 30px rgba(139, 115, 85, 0.2); }
+        .modal-title { font-size: 18px; }
+        .form-label { font-size: 14px; }
+        .form-input, .form-select { font-size: 14px; padding: 10px; }
+        .filter-title { font-size: 14px; }
+        .time-btn { font-size: 13px; padding: 8px 14px; }
+        .filter-option { font-size: 13px; padding: 6px 12px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 20px; font-weight: 600; }
+        .btn-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #6B7280; }
+        
+        /* 表单样式 */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; margin-bottom: 6px; font-weight: 500; color: #374151; }
+        .form-input { width: 100%; padding: 12px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 16px; }
+        .form-select { width: 100%; padding: 12px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 16px; }
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-group { flex: 1; }
+        
+        /* 按钮样式 */
+        .btn { padding: 14px 28px; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 600; transition: all 0.3s; }
+        .btn-primary { background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: white; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4); }
+        .btn-secondary { background: linear-gradient(135deg, #a8edea, #fed6e3); color: #333; box-shadow: 0 4px 15px rgba(168, 237, 234, 0.3); }
+        .btn-secondary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(168, 237, 234, 0.4); }
+        .btn-large { padding: 18px 36px; font-size: 18px; width: 100%; }
+        
+        /* 扑克牌洗牌动画 */
+        .card-carousel { position: relative; height: 300px; overflow: hidden; margin: 20px 0; perspective: 1000px; }
+        .poker-container { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 300px; height: 200px; }
+        .poker-card { position: absolute; width: 80px; height: 120px; background: white; border: 2px solid #E5E7EB; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; text-align: center; padding: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.3s ease; cursor: pointer; }
+        .poker-card.back { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; }
+        .poker-card.selected { transform: scale(1.2) translateY(-20px); box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4); z-index: 100; }
+        .final-card { width: 160px; height: 240px; background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%); color: white; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; text-align: center; padding: 20px; box-shadow: 0 0 30px rgba(0, 210, 255, 0.6); }
+        
+        @keyframes cardShuffle {
+            0% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-30px) rotate(-10deg); }
+            50% { transform: translateX(30px) rotate(10deg); }
+            75% { transform: translateX(-15px) rotate(-5deg); }
+            100% { transform: translateX(0) rotate(0deg); }
+        }
+        
+        @keyframes cardFlip {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(90deg); }
+            100% { transform: rotateY(0deg); }
+        }
+        
+        @keyframes cardFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes finalGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 210, 255, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(0, 210, 255, 0.8); }
+        }
+        
+        .hidden { display: none; }
+        .tag { background: linear-gradient(135deg, #a8edea, #fed6e3); padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; color: #333; }
+        .timer { font-size: 36px; font-weight: bold; text-align: center; margin: 20px 0; background: linear-gradient(135deg, #ff6b6b, #ee5a24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        
+        /* 空状态 */
+        .empty-state { text-align: center; padding: 60px 20px; color: #6B7280; }
+        .empty-icon { font-size: 48px; margin-bottom: 16px; }
+        
+        /* 彩色小碎纸动画 */
+        .confetti { position: fixed; width: 8px; height: 12px; pointer-events: none; z-index: 999; animation: confettiFall 0.5s linear forwards; }
+        @keyframes confettiFall {
+            0% { transform: translateY(0px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg) translateX(50px); opacity: 0.3; }
+        }
+        
+        /* 停滞原因 */
+        .stall-reason { font-size: 11px; color: #999; margin-top: 4px; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>混沌计划抽取机</h1>
+            <div class="subtitle">将待办事项化作未知的行动卡牌</div>
+            <div class="english">Chaos Plan Card Machine</div>
+        </div>
+
+        <!-- Tab导航 -->
+        <div class="tabs">
+            <div class="tab-group">
+                <div class="tab active" onclick="switchTab('pending')">待完成</div>
+                <div class="tab" onclick="switchTab('completed')">已完成</div>
+                <div class="tab" onclick="switchTab('stalled')">已停滞</div>
+            </div>
+            <div class="action-buttons">
+                <button class="btn-action btn-add" onclick="openAddModal()">+ 创建新任务</button>
+                <button class="btn-action btn-draw" onclick="openDrawModal()">🎲 随机抽取</button>
+            </div>
+        </div>
+
+        <!-- 任务列表 -->
+        <div class="task-list" id="taskList">
+            <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <p>暂无任务，点击右下角 + 号添加第一个任务吧！</p>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- 添加任务弹窗 -->
+    <div id="addModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">添加新任务</h2>
+                <button class="btn-close" onclick="closeModal('addModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">任务名称</label>
+                <input type="text" id="taskName" class="form-input" placeholder="输入任务名称">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">重复性</label>
+                    <select id="taskType" class="form-select">
+                        <option value="once">一次性任务</option>
+                        <option value="regular">常规任务</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">预计时长</label>
+                    <select id="taskDuration" class="form-select">
+                        <option value="15">15分钟</option>
+                        <option value="30">30分钟</option>
+                        <option value="60">1小时</option>
+                        <option value="custom">自定义</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group hidden" id="customDurationGroup">
+                <label class="form-label">自定义时长(分钟)</label>
+                <input type="number" id="customDuration" class="form-input" placeholder="输入分钟数">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">优先级</label>
+                    <select id="taskPriority" class="form-select">
+                        <option value="high">高</option>
+                        <option value="medium">中</option>
+                        <option value="low">低</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">能量等级</label>
+                    <select id="taskEnergy" class="form-select">
+                        <option value="high">很强</option>
+                        <option value="medium">还行</option>
+                        <option value="low">敷衍</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">任务分类</label>
+                <input type="text" id="taskCategory" class="form-input" placeholder="输入分类(可选)" list="categoryList">
+                <datalist id="categoryList"></datalist>
+            </div>
+            <button class="btn btn-primary btn-large" onclick="addTask()">添加任务</button>
+        </div>
+    </div>
+
+    <!-- 编辑任务弹窗 -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">编辑任务</h2>
+                <button class="btn-close" onclick="closeModal('editModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">任务名称</label>
+                <input type="text" id="editTaskName" class="form-input">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">重复性</label>
+                    <select id="editTaskType" class="form-select">
+                        <option value="once">一次性任务</option>
+                        <option value="regular">常规任务</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">预计时长</label>
+                    <input type="number" id="editTaskDuration" class="form-input" placeholder="分钟">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">优先级</label>
+                    <select id="editTaskPriority" class="form-select">
+                        <option value="high">高</option>
+                        <option value="medium">中</option>
+                        <option value="low">低</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">能量等级</label>
+                    <select id="editTaskEnergy" class="form-select">
+                        <option value="high">很强</option>
+                        <option value="medium">还行</option>
+                        <option value="low">敷衍</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">任务分类</label>
+                <input type="text" id="editTaskCategory" class="form-input">
+            </div>
+            <div class="form-group" id="stallReasonGroup" style="display: none;">
+                <label class="form-label">停滞原因</label>
+                <textarea id="editStallReason" class="form-input" rows="3" placeholder="请输入停滞原因..."></textarea>
+            </div>
+            <button class="btn btn-primary btn-large" onclick="saveEditTask()">保存修改</button>
+        </div>
+    </div>
+
+    <!-- 抽取任务弹窗 -->
+    <div id="drawModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">抽取任务卡</h2>
+                <button class="btn-close" onclick="closeModal('drawModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">你有多少空闲时间？(分钟)</label>
+                <div class="time-buttons">
+                    <div class="time-btn" onclick="selectTime(15)">15分钟</div>
+                    <div class="time-btn" onclick="selectTime(30)">30分钟</div>
+                    <div class="time-btn" onclick="selectTime(60)">1小时</div>
+                    <div class="time-btn" onclick="selectTime('custom')">自定义</div>
+                </div>
+                <input type="number" id="availableTime" class="form-input hidden" placeholder="输入分钟数">
+            </div>
+            
+            <div class="filter-group">
+                <div class="filter-title">优先级筛选</div>
+                <div class="filter-options">
+                    <div class="filter-option" onclick="selectFilter('priority', 'all')">全部</div>
+                    <div class="filter-option" onclick="selectFilter('priority', 'high')">高</div>
+                    <div class="filter-option" onclick="selectFilter('priority', 'medium')">中</div>
+                    <div class="filter-option" onclick="selectFilter('priority', 'low')">低</div>
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <div class="filter-title">能量等级筛选</div>
+                <div class="filter-options">
+                    <div class="filter-option" onclick="selectFilter('energy', 'all')">全部</div>
+                    <div class="filter-option" onclick="selectFilter('energy', 'high')">很强</div>
+                    <div class="filter-option" onclick="selectFilter('energy', 'medium')">还行</div>
+                    <div class="filter-option" onclick="selectFilter('energy', 'low')">敷衍</div>
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <div class="filter-title">任务分类筛选</div>
+                <div class="filter-options" id="categoryFilters">
+                    <div class="filter-option active" onclick="selectFilter('category', 'all')">全部</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label><input type="checkbox" id="allowCompleted"> 允许抽取今日已完成的常规任务</label>
+            </div>
+            <button class="btn btn-primary btn-large" onclick="drawTask()">🎲 抽取任务卡</button>
+        </div>
+    </div>
+
+    <!-- 任务卡片结果弹窗 -->
+    <div id="cardModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">抽中的任务</h2>
+                <button class="btn-close" onclick="closeModal('cardModal')">&times;</button>
+            </div>
+            <div id="cardCarousel" class="card-carousel hidden"></div>
+            <div id="taskResult" class="hidden">
+                <h2 id="drawnTaskName" style="text-align: center; margin-bottom: 16px;"></h2>
+                <div id="drawnTaskMeta" style="text-align: center; margin-bottom: 20px;"></div>
+                <div class="timer" id="timer">00:00</div>
+                <div style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="redraw()" id="redrawBtn">换一个 (5次)</button>
+                    <button class="btn btn-primary" onclick="startTimer()">开始计时</button>
+                    <button class="btn btn-primary" onclick="completeTask()">完成任务</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>

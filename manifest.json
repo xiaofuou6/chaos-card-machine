@@ -1,0 +1,22 @@
+{
+  "name": "混沌计划抽取机",
+  "short_name": "抽卡机",
+  "description": "将待办事项化作未知的行动卡牌",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#faf7f0",
+  "theme_color": "#ff6b6b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%23ff6b6b' rx='20'/><text x='96' y='120' font-size='80' text-anchor='middle' fill='white'>🎴</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%23ff6b6b' rx='50'/><text x='256' y='320' font-size='200' text-anchor='middle' fill='white'>🎴</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
